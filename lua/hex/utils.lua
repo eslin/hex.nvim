@@ -8,22 +8,33 @@ function M.drop_undo_history()
 end
 
 function M.dump_to_hex(hex_dump_cmd)
+  local modified = vim.bo.mod
+
   vim.bo.bin = true
   vim.b['hex'] = true
-  vim.cmd([[%! ]] .. hex_dump_cmd .. " \"" .. vim.fn.expand('%:p') .. "\"")
+
+  -- Dump current buffer, not file from disk
+  vim.cmd([[%! ]] .. hex_dump_cmd)
+
   vim.b.hex_ft = vim.bo.ft
   vim.bo.ft = 'xxd'
   M.drop_undo_history()
   M.dettach_all_lsp_clients_from_current_buf()
-  vim.bo.mod = false
+
+  -- Toggling view must not change dirty state
+  vim.bo.mod = modified
 end
 
 function M.assemble_from_hex(hex_assemble_cmd)
+  local modified = vim.bo.mod
+
   vim.cmd([[%! ]] .. hex_assemble_cmd)
   vim.bo.ft = vim.b.hex_ft
   M.drop_undo_history()
-  vim.bo.mod = false
   vim.b['hex'] = false
+
+  -- Preserve dirty state from hex edits
+  vim.bo.mod = modified
 end
 
 function M.begin_patch_from_hex(hex_assemble_cmd)
