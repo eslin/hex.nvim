@@ -9,6 +9,7 @@ end
 
 function M.dump_to_hex(hex_dump_cmd)
   local modified = vim.bo.mod
+  vim.b.hex_transforming = true
 
   vim.bo.bin = true
   vim.b['hex'] = true
@@ -23,10 +24,13 @@ function M.dump_to_hex(hex_dump_cmd)
 
   -- Toggling view must not change dirty state
   vim.bo.mod = modified
+  vim.b.hex_ascii_tick = vim.api.nvim_buf_get_changedtick(0)
+  vim.b.hex_transforming = false
 end
 
 function M.assemble_from_hex(hex_assemble_cmd)
   local modified = vim.bo.mod
+  vim.b.hex_transforming = true
 
   vim.cmd([[%! ]] .. hex_assemble_cmd)
   vim.bo.ft = vim.b.hex_ft
@@ -35,10 +39,12 @@ function M.assemble_from_hex(hex_assemble_cmd)
 
   -- Preserve dirty state from hex edits
   vim.bo.mod = modified
+  vim.b.hex_transforming = false
 end
 
 function M.begin_patch_from_hex(hex_assemble_cmd)
   vim.b.hex_cur_pos = vim.fn.getcurpos()
+  vim.b.hex_transforming = true
   vim.cmd([[%! ]] .. hex_assemble_cmd)
 end
 
@@ -46,6 +52,20 @@ function M.finish_patch_from_hex(hex_dump_cmd)
   vim.cmd([[%! ]] .. hex_dump_cmd)
   vim.fn.setpos('.', vim.b.hex_cur_pos)
   vim.bo.mod = true
+  vim.b.hex_transforming = false
+end
+
+function M.refresh_ascii(hex_dump_cmd, hex_assemble_cmd)
+  local modified = vim.bo.mod
+  local cursor = vim.fn.getcurpos()
+  vim.b.hex_transforming = true
+
+  vim.cmd([[%! ]] .. hex_assemble_cmd)
+  vim.cmd([[%! ]] .. hex_dump_cmd)
+
+  vim.fn.setpos('.', cursor)
+  vim.bo.mod = modified
+  vim.b.hex_transforming = false
 end
 
 function M.is_program_executable(program)

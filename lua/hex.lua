@@ -3,9 +3,26 @@ local augroup_hex_editor = vim.api.nvim_create_augroup('hex_editor', { clear = t
 
 local M = {}
 
+local function refresh_ascii()
+  if not vim.b.hex or not M.cfg.update_ascii or vim.b.hex_refreshing or vim.b.hex_transforming then
+    return
+  end
+
+  local changedtick = vim.api.nvim_buf_get_changedtick(0)
+  if vim.b.hex_ascii_tick == changedtick then
+    return
+  end
+
+  vim.b.hex_refreshing = true
+  u.refresh_ascii(M.cfg.dump_cmd, M.cfg.assemble_cmd)
+  vim.b.hex_ascii_tick = vim.api.nvim_buf_get_changedtick(0)
+  vim.b.hex_refreshing = false
+end
+
 M.cfg = {
   dump_cmd = 'xxd -g 1 -u',
   assemble_cmd = 'xxd -r',
+  update_ascii = true,
   is_file_binary_pre_read = function()
     local binary_ext = { 'out', 'bin', 'png', 'jpg', 'jpeg', 'exe', 'dll' }
     -- only work on normal buffers
@@ -76,6 +93,14 @@ local setup_auto_cmds = function()
     if vim.b.hex then
       u.finish_patch_from_hex(M.cfg.dump_cmd)
     end
+  end })
+
+  vim.api.nvim_create_autocmd({ 'InsertLeave' }, { group = augroup_hex_editor, callback = function()
+    refresh_ascii()
+  end })
+
+  vim.api.nvim_create_autocmd({ 'TextChanged' }, { group = augroup_hex_editor, callback = function()
+    refresh_ascii()
   end })
 end
 

@@ -34,6 +34,10 @@ or their vim cmds
 :HexAssemble
 :HexToggle
 ```
+When editing in hex view, the ASCII column is automatically updated after
+each edit by default. This can be disabled with `update_ascii = false` in
+the setup configuration.
+
 any file opens in hex view if opened with `-b`:
 ```bash
 nvim -b file
@@ -50,7 +54,10 @@ require 'hex'.setup {
 
   -- cli command used to assemble from hex data
   assemble_cmd = 'xxd -r',
-  
+
+  -- update the ASCII column after edits in hex view
+  update_ascii = true,
+
   -- function that runs on BufReadPre to determine if it's binary or not
   is_file_binary_pre_read = function()
     -- logic that determines if a buffer contains binary data or not
